@@ -1,6 +1,6 @@
 ﻿using System.Reflection.Metadata.Ecma335;
 
-namespace s.Models
+namespace JKSE_Web_API.Models
 {
     public class ParamForeignFlowCVS
     {

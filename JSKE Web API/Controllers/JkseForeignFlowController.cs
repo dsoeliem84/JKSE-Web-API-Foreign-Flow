@@ -3,16 +3,19 @@ using JKSE_Web_API.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using s.Models;
-using System.Drawing.Drawing2D;
 
 namespace JKSE_Web_API.Controllers
 {
+    public enum TypeDataFlow
+    {
+        inflow = 1,
+        outflow = -1
+    }
 
     [Route("api/[controller]/[action]")]
     [ApiController]
     public class JkseForeignFlowController : ControllerBase
-    {
+    {     
 
         private readonly JkseDataContext _context;
 
@@ -95,9 +98,5 @@ namespace JKSE_Web_API.Controllers
         }
     }
 
-    public enum TypeDataFlow
-    {
-        inflow = 1,
-        outflow = -1
-    }
+    
 }
