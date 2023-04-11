@@ -7,12 +7,18 @@ namespace JKSE_Web_API.Data
     {
         public DbSet<ForeignFlow> ForeignFlow { get; set; }
 
-       // public DbSet<List<ForeignFlow>> ForeignFlows { get; set; }
+        //public DbSet<List<ForeignFlow>> ForeignFlows { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseSqlServer(@"data source=NETCORE-PROJECT;initial catalog=JKSE_ForeignFlow;user id=sa;password=123qweasd;Trusted_Connection=SSPI;TrustServerCertificate=true");
+            //optionsBuilder.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);   
         }
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            //builder.Entity<List<ForeignFlow>>().HasNoKey();
+        }
+
     }
 }
 

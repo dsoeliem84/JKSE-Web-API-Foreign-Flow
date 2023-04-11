@@ -4,13 +4,7 @@ namespace JKSE_Web_API.Models
 {
     public class ParamForeignFlowCVS
     {
-        private string _tickerCode = "";
-
-        public string TickerCode
-        {
-            get { return _tickerCode.Substring(0,4); }
-            set { _tickerCode = value; }
-        }
+        public string? TickerCode { get; set; }
           
         public string? VolumeTotal { get; set; }
 

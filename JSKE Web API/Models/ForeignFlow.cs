@@ -25,10 +25,10 @@ namespace JKSE_Web_API.Models
 
         public int VolumeSell { get; set; }
 
-        [Column(TypeName = "Decimal (5,2)")]
+        [Column(TypeName = "Decimal (8,2)")]
         public decimal NetRatioVolume { get; set; }
 
-        [Column(TypeName = "Decimal (5,2)")]
+        [Column(TypeName = "Decimal (8,2)")]
         public decimal DominationRatio { get; set; }
     }
 }
