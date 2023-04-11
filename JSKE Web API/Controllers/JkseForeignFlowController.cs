@@ -2,6 +2,7 @@
 using JKSE_Web_API.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace JKSE_Web_API.Controllers
@@ -15,7 +16,7 @@ namespace JKSE_Web_API.Controllers
     [Route("api/[controller]/[action]")]
     [ApiController]
     public class JkseForeignFlowController : ControllerBase
-    {     
+    {
 
         private readonly JkseDataContext _context;
 
@@ -24,7 +25,7 @@ namespace JKSE_Web_API.Controllers
             this._context = context;
         }
 
-        [HttpGet (Name = "GetDailyData")]
+        [HttpGet(Name = "GetDailyData")]
         public async Task<ActionResult<List<ForeignFlow>>> GetDailyData()
         {
             try
@@ -40,66 +41,8 @@ namespace JKSE_Web_API.Controllers
             }
         }
 
-        [HttpPost(Name ="LoadData")]
+        [HttpPost(Name = "LoadData")]
         public async Task<ActionResult> LoadData(DateTime pDateInputData, TypeDataFlow pTypeDataFlow, List<ParamForeignFlowCVS> lstDataForeignFlow)
-        {
-            try
-            {
-
-                var dataWithSameDate = _context.ForeignFlow.Where(x => x.DateData == DateTime.Now.Date);
-                _context.ForeignFlow.RemoveRange(dataWithSameDate);
-                await _context.SaveChangesAsync();
-
-                List<ForeignFlow> lstData = new List<ForeignFlow>();
-                
-                int volBuy = 1;
-                int volSell = 1;
-                int volTotal = 1;
-                long valTotal = 1;
-                
-
-                foreach (ParamForeignFlowCVS dataParam in lstDataForeignFlow)
-                {
-                    if (!dataParam.TickerCode.ToUpper().Contains("-W"))
-                    {
-                        volBuy = Convert.ToInt32(dataParam.VolumeBuy.Replace(",", ""));
-                        volSell = Convert.ToInt32(dataParam.VolumeSell.Replace(",", ""));
-                        volTotal = Convert.ToInt32(dataParam.VolumeTotal.Replace(",", ""));
-                        valTotal = Convert.ToInt64(dataParam.ValueTotal.Replace(",", ""));
-
-                        if(volTotal == 0) { volTotal = 1; }
-                        if(volSell == 0) { volSell = 1; }
-
-                        var data = new ForeignFlow()
-                        {
-                            DateData = DateTime.Now.Date,
-                            TickerCode = dataParam.TickerCode,
-                            TypeFlow = (int)pTypeDataFlow,
-                            ValueTotal = valTotal,
-                            VolumeBuy = volBuy,
-                            VolumeTotal = volTotal,
-                            VolumeSell = volSell,
-                            DominationRatio = Convert.ToDecimal(volBuy) / Convert.ToDecimal(volTotal),
-                            NetRatioVolume = Convert.ToDecimal(volBuy) / Convert.ToDecimal(volSell),
-                        };
-
-                        lstData.Add(data);
-                    }                   
-                    
-                }
-                await _context.ForeignFlow.AddRangeAsync(lstData);
-                await _context.SaveChangesAsync();
-
-                return Ok("Success added foreign flow data");
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }            
-        }
-
-        [HttpPost(Name = "GetReportForeignFlow")]
-        public async Task<ActionResult> GetReportForeignFlow(DateTime pDateInputData, TypeDataFlow pTypeDataFlow, List<ParamForeignFlowCVS> lstDataForeignFlow)
         {
             try
             {
@@ -156,6 +99,30 @@ namespace JKSE_Web_API.Controllers
             }
         }
 
+        [HttpPost(Name = "GetReportForeignFlow")]
+        public async Task<ActionResult> GetReportForeignFlow(TypeDataFlow pTypeDataFlow, DateTime pStartDate, DateTime pEndDate, long pValueTransaction1, long pValueTransaction2, decimal pRatioNetFlow)
+        {
+            try
+            {
+                var dataReport = _context.Set<List<ForeignFlowReport>>().FromSqlRaw(
+                                    "exec [dbo].[SP_REPORT_INFLOW_OUTFLOW] @pTypeFlow, @pStartDate, @pEndDate, @pValueTransaction1, @pValueTransaction2, @pRatioNetFlow",
+                                    new SqlParameter("@pTypeFlow", (int)pTypeDataFlow),
+                                    new SqlParameter("@pStartDate", pStartDate.Date),
+                                    new SqlParameter("@pEndDate", pEndDate.Date),
+                                    new SqlParameter("@pValueTransaction1", pValueTransaction1),
+                                    new SqlParameter("@pValueTransaction2", pValueTransaction2),
+                                    new SqlParameter("@pRatioNetFlow", pRatioNetFlow)
+                                    ).AsQueryable();
+
+
+                return Ok(dataReport.ToList());
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         [HttpDelete(Name = "Delete")]
         public async Task<ActionResult> Delete(DateTime dateData)
         {
@@ -170,11 +137,11 @@ namespace JKSE_Web_API.Controllers
             catch (Exception ex)
             {
 
-                return BadRequest(ex.Message); 
+                return BadRequest(ex.Message);
             }
-            
+
         }
     }
 
-    
+
 }

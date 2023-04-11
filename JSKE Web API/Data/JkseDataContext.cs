@@ -7,6 +7,7 @@ namespace JKSE_Web_API.Data
     {
         public DbSet<ForeignFlow> ForeignFlow { get; set; }
 
+
         //public DbSet<List<ForeignFlow>> ForeignFlows { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -16,7 +17,9 @@ namespace JKSE_Web_API.Data
         }
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            //builder.Entity<List<ForeignFlow>>().HasNoKey();
+
+            builder.Entity<ForeignFlowReport>().HasNoKey().ToView(null);
+            builder.Entity<List<ForeignFlowReport>>().HasNoKey().ToView(null);
         }
 
     }
