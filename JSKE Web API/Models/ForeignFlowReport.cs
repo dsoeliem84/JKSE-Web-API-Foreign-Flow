@@ -7,8 +7,11 @@ namespace JKSE_Web_API.Models
     {
         public string? TickerCode { get; set; }
         public int TotalDays { get; set; }
-        public long AccumulationValue { get; set; }
-        public int NetVolume { get; set; }
+        public long VolumeTotal { get; set; }
+        public int AccumulationValue { get; set; }
+        public int NetBuyVolume { get; set; }
+        public int NetSellVolume { get; set; }
+        public int NetForeignVolume { get; set; }
         public string? RatioNetFlowText { get; set; }
         public string? VolatilityLevelText { get; set; }
         public decimal RatioNetFlow { get; set; }

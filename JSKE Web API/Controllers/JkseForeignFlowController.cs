@@ -4,14 +4,15 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+using System.Data.Common;
+using System.Data;
+using Dapper;
+using JKSE_Web_API.Data.Enum;
 
 namespace JKSE_Web_API.Controllers
 {
-    public enum TypeDataFlow
-    {
-        inflow = 1,
-        outflow = -1
-    }
+    
 
     [Route("api/[controller]/[action]")]
     [ApiController]
@@ -37,6 +38,37 @@ namespace JKSE_Web_API.Controllers
             catch (Exception ex)
             {
 
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet(Name = "GetReportForeignFlow")]
+        public async Task<ActionResult> GetReportForeignFlow(TypeDataFlow pTypeDataFlow, DateTime pStartDate, DateTime pEndDate, long pValueTransaction1, long pValueTransaction2, decimal pRatioNetFlow, int pTotalDays)
+        {
+            try
+            {
+                //using dapper for easier call stored proc that return join tables"
+
+                using (var conn = new SqlConnection(_context.Database.GetConnectionString()))
+                {
+                    //Set up DynamicParameters object to pass parameters  
+                    DynamicParameters dParams = new DynamicParameters();
+                    dParams.Add("pTypeFlow", (int)pTypeDataFlow);
+                    dParams.Add("pStartDate", pStartDate);
+                    dParams.Add("pEndDate", pEndDate);
+                    dParams.Add("pValueTransaction1", pValueTransaction1);
+                    dParams.Add("pValueTransaction2", pValueTransaction2);
+                    dParams.Add("pRatioNetFlow", pRatioNetFlow);
+                    dParams.Add("pTotalDays", pTotalDays);
+
+                    //Execute stored procedure and map the returned result to a Customer object  
+                    var foreignFlowData = await conn.QueryAsync<ForeignFlowReport>("SP_REPORT_INFLOW_OUTFLOW", dParams, commandType: CommandType.StoredProcedure);
+
+                    return Ok(foreignFlowData);
+                }
+            }
+            catch (Exception ex)
+            {
                 return BadRequest(ex.Message);
             }
         }
@@ -92,30 +124,6 @@ namespace JKSE_Web_API.Controllers
                 await _context.SaveChangesAsync();
 
                 return Ok("Success added foreign flow data");
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
-
-        [HttpPost(Name = "GetReportForeignFlow")]
-        public async Task<ActionResult> GetReportForeignFlow(TypeDataFlow pTypeDataFlow, DateTime pStartDate, DateTime pEndDate, long pValueTransaction1, long pValueTransaction2, decimal pRatioNetFlow)
-        {
-            try
-            {
-                var dataReport = _context.Set<List<ForeignFlowReport>>().FromSqlRaw(
-                                    "exec [dbo].[SP_REPORT_INFLOW_OUTFLOW] @pTypeFlow, @pStartDate, @pEndDate, @pValueTransaction1, @pValueTransaction2, @pRatioNetFlow",
-                                    new SqlParameter("@pTypeFlow", (int)pTypeDataFlow),
-                                    new SqlParameter("@pStartDate", pStartDate.Date),
-                                    new SqlParameter("@pEndDate", pEndDate.Date),
-                                    new SqlParameter("@pValueTransaction1", pValueTransaction1),
-                                    new SqlParameter("@pValueTransaction2", pValueTransaction2),
-                                    new SqlParameter("@pRatioNetFlow", pRatioNetFlow)
-                                    ).AsQueryable();
-
-
-                return Ok(dataReport.ToList());
             }
             catch (Exception ex)
             {

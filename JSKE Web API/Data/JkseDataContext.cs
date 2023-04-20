@@ -19,7 +19,6 @@ namespace JKSE_Web_API.Data
         {
 
             builder.Entity<ForeignFlowReport>().HasNoKey().ToView(null);
-            builder.Entity<List<ForeignFlowReport>>().HasNoKey().ToView(null);
         }
 
     }
