@@ -12,7 +12,7 @@ using JKSE_Web_API.Data.Enum;
 
 namespace JKSE_Web_API.Controllers
 {
-    
+
 
     [Route("api/[controller]/[action]")]
     [ApiController]
@@ -26,14 +26,46 @@ namespace JKSE_Web_API.Controllers
             this._context = context;
         }
 
-        [HttpGet(Name = "GetDailyData")]
-        public async Task<ActionResult<List<ForeignFlow>>> GetDailyData()
+        [HttpGet(Name = "GetDailyStats")]
+        public async Task<ActionResult<List<DailyStats>>> GetDailyStats(DateTime dateData, int recordNo)
         {
             try
             {
-                var dailyData = _context.ForeignFlow.Where(x => x.DateData == DateTime.Now.Date);
+                recordNo = (recordNo == 0) ? 10 : recordNo;
 
-                return Ok(dailyData);
+                var dailyStats = _context.DailyStats
+                    .Where(x => x.DateData <= dateData.Date)
+                    .OrderByDescending(x => x.DateData)
+                    .Take(recordNo);
+
+                if (dailyStats.Count() > 0)
+                    return Ok(dailyStats);
+                else
+                    return Ok("No current daily stats data");
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet(Name = "GetForeignFlowData")]
+        public async Task<ActionResult<List<ForeignFlow>>> GetForeignFlowData(DateTime dateData, int recordNo)
+        {
+            try
+            {
+                recordNo = (recordNo == 0) ? 10 : recordNo;
+
+                var dailyData = _context.ForeignFlow
+                    .Where(x => x.DateData == dateData.Date && x.ValueTotal > 10000000)
+                    .OrderByDescending(x => x.NetRatioVolume)
+                    .Take(recordNo);
+
+                if (dailyData.Count() > 0)
+                    return Ok(dailyData);
+                else
+                    return Ok("No current foreign flow data");
             }
             catch (Exception ex)
             {
@@ -73,13 +105,42 @@ namespace JKSE_Web_API.Controllers
             }
         }
 
+
+        [HttpPost(Name = "AddDailyStats")]
+        public async Task<ActionResult> AddDailyStats(DateTime pDateInputData, decimal pIndexPrice, decimal pVolumeTransaction, decimal pTurnover, decimal pForeignNetBuy)
+        {
+            try
+            {
+                var dataWithSameDate = _context.DailyStats.Where(x => x.DateData == pDateInputData);
+                _context.DailyStats.RemoveRange(dataWithSameDate);
+                await _context.SaveChangesAsync();
+
+                DailyStats dailyStats = new DailyStats();
+
+                dailyStats.DateData = pDateInputData;
+                dailyStats.IndexPrice = pIndexPrice;
+                dailyStats.VolumeTransaction = pVolumeTransaction;
+                dailyStats.Turnover = pTurnover;
+                dailyStats.ForeignNetBuy = pForeignNetBuy;
+
+                _context.DailyStats.Add(dailyStats);
+                await _context.SaveChangesAsync();
+
+                return Ok("Success added daily stats data");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         [HttpPost(Name = "LoadData")]
         public async Task<ActionResult> LoadData(DateTime pDateInputData, TypeDataFlow pTypeDataFlow, List<ParamForeignFlowCVS> lstDataForeignFlow)
         {
             try
             {
 
-                var dataWithSameDate = _context.ForeignFlow.Where(x => x.DateData == DateTime.Now.Date);
+                var dataWithSameDate = _context.ForeignFlow.Where(x => (x.DateData == DateTime.Now.Date && x.TypeFlow == (int)pTypeDataFlow));
                 _context.ForeignFlow.RemoveRange(dataWithSameDate);
                 await _context.SaveChangesAsync();
 
@@ -93,7 +154,7 @@ namespace JKSE_Web_API.Controllers
 
                 foreach (ParamForeignFlowCVS dataParam in lstDataForeignFlow)
                 {
-                    if (!dataParam.TickerCode.ToUpper().Contains("-W"))
+                    if (!dataParam.TickerCode.ToUpper().Contains("-W") && !dataParam.TickerCode.ToUpper().Contains("R-"))
                     {
                         volBuy = Convert.ToInt32(dataParam.VolumeBuy.Replace(",", ""));
                         volSell = Convert.ToInt32(dataParam.VolumeSell.Replace(",", ""));
@@ -131,6 +192,8 @@ namespace JKSE_Web_API.Controllers
             }
         }
 
+
+
         [HttpDelete(Name = "Delete")]
         public async Task<ActionResult> Delete(DateTime dateData)
         {
@@ -149,6 +212,8 @@ namespace JKSE_Web_API.Controllers
             }
 
         }
+
+        
     }
 
 
